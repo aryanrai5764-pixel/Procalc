@@ -1,0 +1,125 @@
+#:import NoTransition kivy.uix.screenmanager.NoTransition
+#:import dp kivy.metrics.dp
+
+# ---------------------------------------------------------------
+# Root widget: toolbar on top, calculator panel below
+# (the menu / history buttons call functions in main.py)
+# ---------------------------------------------------------------
+MainLayout:
+    orientation: "vertical"
+
+    canvas.before:
+        Color:
+            rgba: app.c_bg
+        Rectangle:
+            pos: self.pos
+            size: self.size
+
+    MDTopAppBar:
+        id: toolbar
+        title: "Calculator"
+        md_bg_color: app.c_bar
+        specific_text_color: app.c_text
+        elevation: 0
+
+        left_action_items:
+            [["menu", lambda x: root.show_menu(x)]]
+
+        right_action_items:
+            [["history", lambda x: root.show_history()]]
+
+    CalcPanel:
+        id: panel
+        # Leave room for the native AdMob banner anchored to the bottom.
+        size_hint_y: 1
+
+    Widget:
+        # The native banner is drawn by Android over this reserved strip.
+        size_hint_y: None
+        height: dp(56)
+
+
+# ---------------------------------------------------------------
+# One calculator key (colours are set from main.py -> KEY_STYLES)
+# ---------------------------------------------------------------
+<CalcButton>:
+    markup: True
+    bold: True
+    font_size: "16sp" if root.style in ("fn", "ac", "del") else "22sp"
+    halign: "center"
+    valign: "middle"
+    text_size: self.size
+    canvas.before:
+        Color:
+            rgba: self.bg_down if self.state == "down" else self.bg
+        RoundedRectangle:
+            pos: self.pos
+            size: self.size
+            radius: [dp(12)]
+
+
+# ---------------------------------------------------------------
+# Display (status line, expression, result) + the two keypads
+# ---------------------------------------------------------------
+<CalcPanel>:
+    orientation: "vertical"
+    padding: dp(10)
+    spacing: dp(10)
+
+    BoxLayout:
+        id: display
+        orientation: "vertical"
+        size_hint_y: 0.21 if root.mode == "scientific" else 0.28
+        padding: dp(14), dp(6)
+
+        canvas.before:
+            Color:
+                rgba: app.c_display
+            RoundedRectangle:
+                pos: self.pos
+                size: self.size
+                radius: [dp(16)]
+
+        # little indicators: 2nd / HYP / DEG / ENG / M
+        Label:
+            text: root.status
+            size_hint_y: None
+            height: dp(18)
+            font_size: "11sp"
+            bold: True
+            color: app.c_status
+            halign: "left"
+            text_size: self.size
+
+        # what you are typing
+        Label:
+            text: root.expr
+            font_size: "26sp"
+            color: app.c_expr
+            halign: "right"
+            valign: "bottom"
+            text_size: self.size
+            shorten: True
+            shorten_from: "left"
+
+        # the answer
+        Label:
+            text: root.result if root.result else ("" if root.expr else "0")
+            font_size: "40sp" if len(self.text) <= 11 else "26sp"
+            bold: True
+            color: app.c_error if "ERROR" in self.text else app.c_result
+            halign: "right"
+            valign: "middle"
+            text_size: self.size
+            shorten: True
+            shorten_from: "left"
+
+    ScreenManager:
+        id: sm
+        transition: NoTransition()
+        Screen:
+            id: basic_screen
+            name: "basic"
+        Screen:
+            id: sci_screen
+            name: "scientific"
